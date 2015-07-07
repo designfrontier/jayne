@@ -1,6 +1,6 @@
 # jayne
 
- ## What is this?
+## What is this?
  jayne is a middleware/pipe function system for outbound http(s) requests in the browser. 
 
 ## Using jayne
