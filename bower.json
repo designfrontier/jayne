@@ -1,0 +1,16 @@
+{
+  "name": "jayne.min",
+  "version": "1.0.0",
+  "description": " middleware/pipe function system for http(s) requests in the browser",
+  "main": "dist/jayne.min.js",
+  "dependencies": {
+  },
+  "devDependencies": {},
+  "scripts": {
+    "start": "node app.js",
+    "test": "gulp test"
+  },
+  "author": "",
+  "license": "MIT",
+  "engines": {}
+}
