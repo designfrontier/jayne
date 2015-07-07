@@ -6,39 +6,49 @@ let config
             let fetchPromise
                 , originalRequest = {path: pathIn, options: options}
                 , previousRequest = originalRequest
-                , originalResponse
-                , previousResponse;
-
-            config.request.forEach(function (currentFn) {
-                previousRequest = currentFn.apply({}, [previousRequest, originalRequest]);
-            });
+                , originalResponse;
 
 
+            config.request.reduce(function (prev, curr) {
 
-            if(typeof previousRequest.response !== 'undefined') {
-                //short circuit and fake the response
-                //  need a promise here to allow for the code below to be identical
-                //  between a faked request and a network involved request
-                fetchPromise = function (res, rej) {
-                    setTimeout(function () {
-                        res(previousRequest.response);
-                    }, 0);
-                };
-            } else {
-                fetchPromise = fetchAPI(pathIn, options);
-            }
+                return prev.then(function (request) {
+                    return new Promise(function (resolve, reject) {
+                        var p = curr.apply({}, [{request: request, original: originalRequest}, resolve]);
 
-            fetchPromise.then(function (response) {
-                previousResponse = response;
-
-                config.response.forEach(function (currentFn) {
-                    previousResponse = currentFn.apply({}, [previousResponse, originalResponse]);
+                        if(p instanceof Promise){
+                            p.then(function(resp){
+                                resolve(resp);
+                            });
+                        }
+                    });
                 });
 
-                resolve(previousResponse);
-            }).catch(function (err) {
-                reject(err);
-            });
+            }, new Promise(function(res, rej){res({request: originalRequest, original: originalRequest})}))
+                .then(function (request) {
+
+                    if(typeof request.response !== 'undefined') {
+                        //short circuit and fake the response
+                        //  need a promise here to allow for the code below to be identical
+                        //  between a faked request and a network involved request
+                        fetchPromise = new Promise(function (res, rej) {
+                                res(new Response(JSON.stringify(request.response)));
+                        });
+                    } else {
+                        fetchPromise = fetchAPI(pathIn, options);
+                    }
+
+                    fetchPromise.then(function (response) {
+                        previousResponse = response;
+
+                        config.response.forEach(function (currentFn) {
+                            previousResponse = currentFn.apply({}, [previousResponse, originalResponse]);
+                        });
+
+                        resolve(previousResponse);
+                    }).catch(function (err) {
+                        reject(err);
+                    });
+                });
         });
 
         return promise;
