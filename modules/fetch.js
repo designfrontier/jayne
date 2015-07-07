@@ -13,47 +13,32 @@ let config
                 previousRequest = currentFn.apply({}, [previousRequest, originalRequest]);
             });
 
+
+
             if(typeof previousRequest.response !== 'undefined') {
                 //short circuit and fake the response
+                //  need a promise here to allow for the code below to be identical
+                //  between a faked request and a network involved request
+                fetchPromise = function (res, rej) {
+                    setTimeout(function () {
+                        res(previousRequest.response);
+                    }, 0);
+                };
+            } else {
+                fetchPromise = fetchAPI(pathIn, options);
             }
 
-            config.response.forEach(function (currentFn) {
-                previousResponse = currentFn.apply({}, [previousResponse, originalResponse]);
+            fetchPromise.then(function (response) {
+                previousResponse = response;
+
+                config.response.forEach(function (currentFn) {
+                    previousResponse = currentFn.apply({}, [previousResponse, originalResponse]);
+                });
+
+                resolve(previousResponse);
+            }).catch(function (err) {
+                reject(err);
             });
-
-            // if(typeof config.store === 'undefined' || config.store) {
-            //     localforage.getItem(pathIn).then(function (doc) {
-            //         if(doc === null){
-            //             fetchPromise = fetchAPI(pathIn, options);
-
-            //             fetchPromise.then(function (response) {
-            //                 if(response.status >= 200 && response.status <= 300) {
-            //                     response.json().then(function (data) {
-
-            //                         localforage.setItem(pathIn, crypto.encrypt(data));
-            //                     }).catch(function (err) {
-            //                         console.log('not json');
-            //                     });
-            //                 }
-
-            //                 resolve(response);
-            //             }).catch(function (err) {
-            //                 reject(err);
-            //             });
-            //         } else {
-            //             resolve(new window.Response(JSON.stringify(doc)));
-            //         }
-            //     });
-            // } else {
-            //     fetchPromise = fetchAPI(pathIn, options);
-
-            //     fetchPromise.then(function (response) {
-            //         resolve(response);
-            //     }).catch(function (err) {
-            //         reject(err);
-            //     });
-            // }
-
         });
 
         return promise;
