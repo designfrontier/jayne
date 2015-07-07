@@ -1,18 +1,18 @@
- # jayne
+# jayne
 
  ## What is this?
  jayne is a middleware/pipe function system for outbound http(s) requests in the browser. 
 
- ## Using jayne
+## Using jayne
 
- ### Get it on the page
+### Get it on the page
  To include it in your dependencies: `bower install jayne` then get it on the page like this:
 
  ```
 <script src="bower_components/jayne/dist/jayne.min.js"></script>
  ```
 
- ### Add your own functions
+### Add your own functions
 functions that are passed in are handled in the order in which they are added. They recieve two inputs `function (previous, original, request){}` which are the output of the previous function and the original response object, lastly the request object is included in case you need it for something. (The first function in the line will get the original response as both inputs) These functions are expected to return a modified version of the Response which then becomes the `previous` input to the next function in the queue.
 
 For example a response handler:

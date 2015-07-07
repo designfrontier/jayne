@@ -1,8 +1,8 @@
 import chai from 'chai';
-import * as comurah from './index';
+import * as jayne from './index';
 
 let assert = chai.assert;
 
-describe('Project Comurah Tests', () => {
+describe('Project Jayne Tests', () => {
 
 });
