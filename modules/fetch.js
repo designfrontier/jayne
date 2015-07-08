@@ -6,54 +6,62 @@ let config
             let fetchPromise
                 , originalRequest = {path: pathIn, options: options}
                 , previousRequest = originalRequest
-                , originalResponse
-                , previousResponse;
+                , originalResponse;
 
-            config.request.forEach(function (currentFn) {
-                previousRequest = currentFn.apply({}, [previousRequest, originalRequest]);
-            });
 
-            if(typeof previousRequest.response !== 'undefined') {
-                //short circuit and fake the response
-            }
+            config.request.reduce(function (prev, curr) {
+                return prev.then(function (request) {
+                    return new Promise(function (resolve, reject) {
+                        var p = curr.apply({}, [{request: request, original: originalRequest}, resolve]);
 
-            config.response.forEach(function (currentFn) {
-                previousResponse = currentFn.apply({}, [previousResponse, originalResponse]);
-            });
+                        if(p instanceof Promise){
+                            p.then(function(resp){
+                                resolve(resp);
+                            });
+                        }
+                    });
+                });
 
-            // if(typeof config.store === 'undefined' || config.store) {
-            //     localforage.getItem(pathIn).then(function (doc) {
-            //         if(doc === null){
-            //             fetchPromise = fetchAPI(pathIn, options);
+            }, new Promise(function(res, rej){res({request: originalRequest, original: originalRequest})}))
+                .then(function (request) {
 
-            //             fetchPromise.then(function (response) {
-            //                 if(response.status >= 200 && response.status <= 300) {
-            //                     response.json().then(function (data) {
+                    if(typeof request.response !== 'undefined') {
+                        //short circuit and fake the response
+                        //  need a promise here to allow for the code below to be identical
+                        //  between a faked request and a network involved request
+                        fetchPromise = new Promise(function (res, rej) {
+                                res(new Response(JSON.stringify(request.response)));
+                        });
+                    } else {
+                        fetchPromise = fetchAPI(pathIn, options);
+                    }
 
-            //                         localforage.setItem(pathIn, crypto.encrypt(data));
-            //                     }).catch(function (err) {
-            //                         console.log('not json');
-            //                     });
-            //                 }
+                    fetchPromise.then(function (response) {
 
-            //                 resolve(response);
-            //             }).catch(function (err) {
-            //                 reject(err);
-            //             });
-            //         } else {
-            //             resolve(new window.Response(JSON.stringify(doc)));
-            //         }
-            //     });
-            // } else {
-            //     fetchPromise = fetchAPI(pathIn, options);
+                        originalResponse = response;
 
-            //     fetchPromise.then(function (response) {
-            //         resolve(response);
-            //     }).catch(function (err) {
-            //         reject(err);
-            //     });
-            // }
+                        config.response.reduce(function (prev, curr) {
+                            return prev.then(function (responseIn) {
+                                return new Promise(function (resolve, reject) {
+                                    var p = curr.apply({}, [{response: responseIn, original: originalReponse}, resolve]);
 
+                                    if(p instanceof Promise){
+                                        p.then(function(resp){
+                                            resolve(resp);
+                                        });
+                                    }
+                                });
+                            });
+
+                        }, new Promise(function(res, rej){res({response: response, original: originalResponse})}))
+                            .then(function (responseFinal){
+
+                                resolve(responseFinal);
+                            });
+                    }).catch(function (err) {
+                        reject(err);
+                    });
+                });
         });
 
         return promise;
