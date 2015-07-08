@@ -10,7 +10,6 @@ let config
 
 
             config.request.reduce(function (prev, curr) {
-
                 return prev.then(function (request) {
                     return new Promise(function (resolve, reject) {
                         var p = curr.apply({}, [{request: request, original: originalRequest}, resolve]);
@@ -38,13 +37,27 @@ let config
                     }
 
                     fetchPromise.then(function (response) {
-                        previousResponse = response;
 
-                        config.response.forEach(function (currentFn) {
-                            previousResponse = currentFn.apply({}, [previousResponse, originalResponse]);
-                        });
+                        originalResponse = response;
 
-                        resolve(previousResponse);
+                        config.response.reduce(function (prev, curr) {
+                            return prev.then(function (responseIn) {
+                                return new Promise(function (resolve, reject) {
+                                    var p = curr.apply({}, [{response: responseIn, original: originalReponse}, resolve]);
+
+                                    if(p instanceof Promise){
+                                        p.then(function(resp){
+                                            resolve(resp);
+                                        });
+                                    }
+                                });
+                            });
+
+                        }, new Promise(function(res, rej){res({response: response, original: originalResponse})}))
+                            .then(function (responseFinal){
+
+                                resolve(responseFinal);
+                            });
                     }).catch(function (err) {
                         reject(err);
                     });
