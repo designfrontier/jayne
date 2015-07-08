@@ -1,6 +1,3 @@
-import * as crypto from './crypto';
-import localforage from './localforage';
-
 let oldXHR = window.XMLHttpRequest
     , xhr = function () {
             let tempReq = new oldXHR()
