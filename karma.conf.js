@@ -4,7 +4,6 @@ export default function (config) {
         basePath: './',
 
         files: [
-            './libs/sjcl/sjcl.js',
             './modules/**/*.js'
         ],
 

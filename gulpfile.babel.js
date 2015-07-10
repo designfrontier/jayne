@@ -1,7 +1,6 @@
 import babelRegister from 'babel/register';
 import gulp from 'gulp';
 import mocha from 'gulp-mocha';
-import istanbul from 'gulp-istanbul';
 import sourceMaps from 'gulp-sourcemaps';
 import karma from 'karma';
 import gutil from 'gulp-util';
