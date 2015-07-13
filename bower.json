@@ -5,9 +5,10 @@
   "main": "dist/jayne.min.js",
   "moduleType": "globals",
   "ignore": "",
-  "dependencies": {
+  "dependencies": {},
+  "devDependencies": {
+    "bluebird": "~2.9.33"
   },
-  "devDependencies": {},
   "scripts": {
     "start": "node app.js",
     "test": "gulp test"
