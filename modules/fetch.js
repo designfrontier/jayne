@@ -6,50 +6,36 @@ let config
     , fetch = function (pathIn, options) {
         let promise = new Promise(function (resolve, reject){
             let fetchPromise
-                , originalRequest = {path: pathIn, options: options}
-                , previousRequest = originalRequest
-                , originalResponse;
+                , requestStack = functionStack.create(config.request)
+                , responseStack = functionStack.create(config.response);
 
 
-            functionStack.execute(config.request).then(function (request) {
+            requestStack({path: pathIn, options: options}).then((req) => {
+                //we have run through the request stack... now decide if we should
+                //  make the request by looking for
+                //  req.response
+                if(typeof req.response !== 'undefined'){
+                    //on to the resolve stack!
+                    fetchPromise = new Promise(function (res, rej) {
+                        res(new Response(JSON.stringify(req.response)));
+                    });
+                } else {
+                    fetchPromise = fetchAPI(pathIn, options);
+                }
 
-                    if(typeof request.response !== 'undefined') {
-                        //short circuit and fake the response
-                        //  need a promise here to allow for the code below to be identical
-                        //  between a faked request and a network involved request
-                        fetchPromise = new Promise(function (res, rej) {
-                                res(new Response(JSON.stringify(request.response)));
-                        });
-                    } else {
-                        fetchPromise = fetchAPI(pathIn, options);
-                    }
-
-                    fetchPromise.then(function (response) {
-
-                        originalResponse = response;
-
-                        config.response.reduce(function (prev, curr) {
-                            return prev.then(function (responseIn) {
-                                return new Promise(function (resolve, reject) {
-                                    var p = curr.apply({}, [{response: responseIn, original: originalReponse}, resolve]);
-
-                                    if(p instanceof Promise){
-                                        p.then(function(resp){
-                                            resolve(resp);
-                                        });
-                                    }
-                                });
-                            });
-
-                        }, new Promise(function(res, rej){res({response: response, original: originalResponse})}))
-                            .then(function (responseFinal){
-
-                                resolve(responseFinal);
-                            });
-                    }).catch(function (err) {
-                        reject(err);
+                //now we need to run through the responseStack
+                //  get the data out of the Response object we will re-wrap it later
+                fetchPromise.json().then((data) => {
+                    responseStack(data).then((finishedData) => {
+                        //Rewrap the result in a response so that the external stuff can deal with it
+                        //  as a normal fetch response... yeah
+                        resolve(new Response(JSON.stringify(finishedData)));
                     });
                 });
+
+            }).catch((err) => {
+                reject(err);
+            });
         });
 
         return promise;
