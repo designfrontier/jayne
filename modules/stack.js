@@ -1,18 +1,24 @@
-let execute = (functions, data) => {
-   return functions.reduce(function (prev, curr) {
-            return prev.then(function (request) {
-                return new Promise(function (resolve, reject) {
-                    var p = curr.apply({}, [{request: request, original: originalRequest}, resolve]);
+let create = (functions) => {
+        return (data) => {
 
-                    if(p instanceof Promise){
-                        p.then(function(resp){
-                            resolve(resp);
-                        });
-                    }
+            return functions.reduce((prev, curr) => {
+                return prev.then((request) => {
+                    return new Promise((resolve, reject) => {
+                        var p = curr.apply(null, [request, data, resolve]);
+
+                        if(p instanceof Promise){
+                            p.then((resp) => {
+                                resolve(resp);
+                            });
+                        }
+                    });
                 });
-            });
 
-        }, new Promise(function(res, rej){res({request: originalRequest, original: originalRequest})}));
-};
+            }, new Promise((res, rej) => {
+                //immediate promise to start the stack off right
+                res(JSON.parse(JSON.stringify(data)))
+            }));
+        };
+    };
 
-export default {execute}
+export default {create}

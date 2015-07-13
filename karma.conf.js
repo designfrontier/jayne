@@ -4,6 +4,7 @@ export default function (config) {
         basePath: './',
 
         files: [
+            './libs/bluebird/js/browser/bluebird.js',
             './modules/**/*.js'
         ],
 
