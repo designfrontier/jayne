@@ -25,17 +25,21 @@ let config
 
                 //now we need to run through the responseStack
                 //  get the data out of the Response object we will re-wrap it later
-                fetchPromise.json().then((data) => {
-                    responseStack(data).then((finishedData) => {
-                        //Rewrap the result in a response so that the external stuff can deal with it
-                        //  as a normal fetch response... yeah
-                        resolve(new Response(JSON.stringify(finishedData)));
+                fetchPromise.then((fetchRes) => {
+                    fetchRes.json().then((data) => {
+                        if(typeof config.response !== 'undefined'){
+                            responseStack(data).then((finishedData) => {
+                                //Rewrap the result in a response so that the external stuff can deal with it
+                                //  as a normal fetch response... yeah
+                                resolve(new Response(JSON.stringify(finishedData)));
+                            });
+                        } else {
+                            resolve(new Response(JSON.stringify(data)));
+                        }
+                    }).catch((err) => {
+                        reject(err);
                     });
                 }).catch((err) => {
-                    reject(err);
-                });
-
-                fetchPromise.catch((err) => {
                     reject(err);
                 });
 
