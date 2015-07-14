@@ -1,3 +1,5 @@
+import * as bernstein from 'bernstein';
+
 let oldXHR = window.XMLHttpRequest
     , config
     , xhr = function () {
@@ -14,6 +16,7 @@ let oldXHR = window.XMLHttpRequest
                 }
                 , key;
 
+            //copy the object over while severing ties
             for (key in tempReq){
                 if(typeof tempReq[key] === 'function'){
                     request[key] = passThroughFunction(key);
@@ -27,56 +30,41 @@ let oldXHR = window.XMLHttpRequest
             request.send = function () {
 
                 //first run through the request stack
-                config.request.reduce(function (prev, curr) {
-                    return prev.then(function (request) {
-                        return new Promise(function (resolve, reject) {
-                            var p = curr.apply({}, [{request: request, original: originalRequest}, resolve]);
+                let requestStack = bernstein.create(config.request)
+                    , responseStack = bernstein.create(config.response);
 
-                            if(p instanceof Promise){
-                                p.then(function(resp){
-                                    resolve(resp);
-                                });
-                            }
-                        });
-                    });
+                requestStack(request).then((req) => {
+                    if(typeof req.response !== 'undefined'){
+                        //a response has been set
 
-                }, new Promise(function(res, rej){res({request: request, original: originalRequest})}))
-                    .then(function (request) {
-                        //check for request.response
-                        //  if it exists return it in the body
-                        //  if not then make the request
-
-                    })
-
-                //run through the response stack and trigger the
-                //  correct event when done
-
-
-                localforage.getItem(pathIn).then(function (doc) {
-                    if(doc === null){
-                        request.addEventListener('load', function (data) {
-                            if(typeof config.encrypt !== 'undefined' && config.encrypt){
-                                localforage.setItem(pathIn, crypto.encrypt(request.response));
-                            } else {
-                                localforage.setItem(pathIn, request.response);
-                            }
-                        });
-
-                        request.oldSend();
-                    } else {
-                        if(typeof config.encrypt !== 'undefined' && config.encrypt){
-                            request.response = crypto.decrypt(doc);
-                        } else {
-                            request.response = doc;
-                        }
+                        request = req;
                         request.status = 200;
                         request.responseText = JSON.stringify(request.response);
                         request.statusText = '200 OK';
 
-                        request.dispatchEvent(new Event('load'));
-                        request.onload();
+                    } else {
+                        //send the real request out the door
+                        //  this needs to be a whole new request object so I can grab the data before
+                        //  anyone else does for the response stack
+
                     }
+
+                    responseStack(request).then((req) => {
+                        req.dispatchEvent(new Event('load'));
+                        req.onload();
+                    });
                 });
+
+
+                //         request.addEventListener('load', function (data) {
+                //             if(typeof config.encrypt !== 'undefined' && config.encrypt){
+                //                 localforage.setItem(pathIn, crypto.encrypt(request.response));
+                //             } else {
+                //                 localforage.setItem(pathIn, request.response);
+                //             }
+                //         });
+
+                //         request.oldSend();
             };
 
 
