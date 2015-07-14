@@ -35,9 +35,10 @@ gulp.task('build', () => {
     b = bundler.bundle()
         .on('error', gutil.log)
         .pipe(source('./index.js'))
-        .pipe(gulp.dest('../'))
+        .pipe(rename('jayne.js'))
+        .pipe(gulp.dest('./dist'))
         .pipe(streamify(uglify()))
-        .pipe(rename('jayn.min.js'))
+        .pipe(rename('jayne.min.js'))
         .pipe(gulp.dest('./dist'));
 
 });

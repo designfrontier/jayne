@@ -1,7 +1,10 @@
+import * as bernstein from 'bernstein';
+
 let oldXHR = window.XMLHttpRequest
     , config
-    , xhr = function () {
+    , xhr = () => {
             let tempReq = new oldXHR()
+                , secondaryReq = new oldXHR()
                 , request = {}
                 , rtn = {}
 
@@ -12,8 +15,10 @@ let oldXHR = window.XMLHttpRequest
                         tempReq[key].apply(tempReq, arguments);
                     };
                 }
-                , key;
+                , key
+                , args;
 
+            //copy the object over while severing ties
             for (key in tempReq){
                 if(typeof tempReq[key] === 'function'){
                     request[key] = passThroughFunction(key);
@@ -22,69 +27,67 @@ let oldXHR = window.XMLHttpRequest
                 }
             }
 
+            request.open = function () {
+                args = arguments;
+
+                tempReq['open'].apply(tempReq, arguments);
+            };
+
             request.oldSend = request.send;
 
-            request.send = function () {
-
+            request.send = () => {
                 //first run through the request stack
-                config.request.reduce(function (prev, curr) {
-                    return prev.then(function (request) {
-                        return new Promise(function (resolve, reject) {
-                            var p = curr.apply({}, [{request: request, original: originalRequest}, resolve]);
+                let requestStack = bernstein.create(config.request)
+                    , responseStack = bernstein.create(config.response);
 
-                            if(p instanceof Promise){
-                                p.then(function(resp){
-                                    resolve(resp);
-                                });
-                            }
-                        });
-                    });
+                requestStack(request).then((req) => {
+                    if(req.response !== ''){
+                        //a response has been set
 
-                }, new Promise(function(res, rej){res({request: request, original: originalRequest})}))
-                    .then(function (request) {
-                        //check for request.response
-                        //  if it exists return it in the body
-                        //  if not then make the request
-
-                    })
-
-                //run through the response stack and trigger the
-                //  correct event when done
-
-
-                localforage.getItem(pathIn).then(function (doc) {
-                    if(doc === null){
-                        request.addEventListener('load', function (data) {
-                            if(typeof config.encrypt !== 'undefined' && config.encrypt){
-                                localforage.setItem(pathIn, crypto.encrypt(request.response));
-                            } else {
-                                localforage.setItem(pathIn, request.response);
-                            }
+                        //request = req; //needs to merge not overwrite
+                        Object.keys(req).forEach((key) => {
+                            request[key] = req[key];
                         });
 
-                        request.oldSend();
-                    } else {
-                        if(typeof config.encrypt !== 'undefined' && config.encrypt){
-                            request.response = crypto.decrypt(doc);
-                        } else {
-                            request.response = doc;
-                        }
                         request.status = 200;
                         request.responseText = JSON.stringify(request.response);
                         request.statusText = '200 OK';
 
-                        request.dispatchEvent(new Event('load'));
-                        request.onload();
+                        responseStack(request).then((req) => {
+                            Object.keys(req).forEach((key) => {
+                                request[key] = req[key];
+                            });
+
+                            request.dispatchEvent(new Event('load'));
+                            request.onload();
+                        });
+                    } else {
+                        //send the real request out the door
+                        //  this needs to be a whole new request object so I can grab the data before
+                        //  anyone else does for the response stack
+                        secondaryReq.onload = function () {
+                            responseStack(secondaryReq).then((req) => {
+                                Object.keys(req).forEach((key) => {
+                                    request[key] = req[key];
+                                });
+
+                                request.dispatchEvent(new Event('load'));
+                                request.onload();
+                            });
+                        };
+
+                        secondaryReq.open.apply(secondaryReq, args);
+                        secondaryReq.send();
                     }
                 });
-            };
 
+            };
 
             return request;
         }
 
-        , configurator = function (configObj) {
-            config = configObj
+        , configurator = (configObj) => {
+            config = configObj;
             return xhr;
         };
 
