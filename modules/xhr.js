@@ -4,17 +4,19 @@ let oldXHR = window.XMLHttpRequest
     , config
     , xhr = () => {
             let tempReq = new oldXHR()
+                , secondaryReq = new oldXHR()
                 , request = {}
                 , rtn = {}
 
                 , pathIn = '/api'
 
-                , passThroughFunction = (key) => {
-                    return () => {
+                , passThroughFunction = function (key) {
+                    return function () {
                         tempReq[key].apply(tempReq, arguments);
                     };
                 }
-                , key;
+                , key
+                , args;
 
             //copy the object over while severing ties
             for (key in tempReq){
@@ -24,6 +26,12 @@ let oldXHR = window.XMLHttpRequest
                     request[key] = tempReq[key];
                 }
             }
+
+            request.open = function () {
+                args = arguments;
+
+                tempReq['open'].apply(tempReq, arguments);
+            };
 
             request.oldSend = request.send;
 
@@ -44,25 +52,36 @@ let oldXHR = window.XMLHttpRequest
                         request.status = 200;
                         request.responseText = JSON.stringify(request.response);
                         request.statusText = '200 OK';
+
+                        responseStack(request).then((req) => {
+                            Object.keys(req).forEach((key) => {
+                                request[key] = req[key];
+                            });
+
+                            request.dispatchEvent(new Event('load'));
+                            request.onload();
+                        });
                     } else {
                         //send the real request out the door
                         //  this needs to be a whole new request object so I can grab the data before
                         //  anyone else does for the response stack
-                        request.oldSend();
+                        secondaryReq.onload = function () {
+                            responseStack(secondaryReq).then((req) => {
+                                Object.keys(req).forEach((key) => {
+                                    request[key] = req[key];
+                                });
+
+                                request.dispatchEvent(new Event('load'));
+                                request.onload();
+                            });
+                        };
+
+                        secondaryReq.open.apply(secondaryReq, args);
+                        secondaryReq.send();
                     }
-
-                    responseStack(request).then((req) => {
-                        Object.keys(req).forEach((key) => {
-                            request[key] = req[key];
-                        });
-
-                        request.dispatchEvent(new Event('load'));
-                        request.onload();
-                    });
                 });
 
             };
-
 
             return request;
         }
