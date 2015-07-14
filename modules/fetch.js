@@ -31,6 +31,8 @@ let config
                         //  as a normal fetch response... yeah
                         resolve(new Response(JSON.stringify(finishedData)));
                     });
+                }).catch((err) => {
+                    reject(err);
                 });
 
                 fetchPromise.catch((err) => {
