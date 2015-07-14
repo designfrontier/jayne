@@ -33,15 +33,19 @@ let oldXHR = window.XMLHttpRequest
                 let requestStack = bernstein.create(config.request)
                     , responseStack = bernstein.create(config.response);
 
+                console.log(request);
+
                 requestStack(request).then((req) => {
                     if(typeof req.response !== 'undefined'){
                         //a response has been set
 
-                        request = req;
+                        //request = req; //needs to merge not overwrite
+                        Object.keys(req).forEach((key) => {
+                            request[key] = req[key];
+                        });
                         request.status = 200;
                         request.responseText = JSON.stringify(request.response);
                         request.statusText = '200 OK';
-
                     } else {
                         //send the real request out the door
                         //  this needs to be a whole new request object so I can grab the data before
@@ -50,8 +54,12 @@ let oldXHR = window.XMLHttpRequest
                     }
 
                     responseStack(request).then((req) => {
-                        req.dispatchEvent(new Event('load'));
-                        req.onload();
+                        Object.keys(req).forEach((key) => {
+                            request[key] = req[key];
+                        });
+
+                        request.dispatchEvent(new Event('load'));
+                        request.onload();
                     });
                 });
 
@@ -62,7 +70,7 @@ let oldXHR = window.XMLHttpRequest
         }
 
         , configurator = function (configObj) {
-            config = configObj
+            config = configObj;
             return xhr;
         };
 
