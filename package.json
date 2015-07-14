@@ -6,8 +6,6 @@
   "dependencies": {
     "bernstein": "^1.0.3"
   },
-  "repository": "https://github.com/designfrontier/jayne.git",
-
   "repository": {
     "type": "git",
     "url": "https://github.com/designfrontier/jayne.git"
@@ -18,10 +16,10 @@
     "url": "https://github.com/designfrontier/jayne/issues"
   },
   "homepage": "https://github.com/designfrontier/jayne",
-
   "devDependencies": {
     "babel": "^5.6.14",
     "babelify": "^6.0.2",
+    "bernstein": "^1.0.5",
     "browser-sync": "^2.4.0",
     "browserify": "^9.0.8",
     "chai": "^3.0.0",
@@ -55,6 +53,5 @@
     "dev": "gulp dev",
     "build": "gulp build"
   },
-  "license": "MIT",
   "engines": {}
 }

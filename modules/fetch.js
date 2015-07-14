@@ -9,7 +9,6 @@ let config
                 , requestStack = bernstein.create(config.request)
                 , responseStack = bernstein.create(config.response);
 
-
             requestStack({path: pathIn, options: options}).then((req) => {
                 //we have run through the request stack... now decide if we should
                 //  make the request by looking for
@@ -27,15 +26,11 @@ let config
                 //  get the data out of the Response object we will re-wrap it later
                 fetchPromise.then((fetchRes) => {
                     fetchRes.json().then((data) => {
-                        if(typeof config.response !== 'undefined'){
-                            responseStack(data).then((finishedData) => {
-                                //Rewrap the result in a response so that the external stuff can deal with it
-                                //  as a normal fetch response... yeah
-                                resolve(new Response(JSON.stringify(finishedData)));
-                            });
-                        } else {
-                            resolve(new Response(JSON.stringify(data)));
-                        }
+                        responseStack(data).then((finishedData) => {
+                            //Rewrap the result in a response so that the external stuff can deal with it
+                            //  as a normal fetch response... yeah
+                            resolve(new Response(JSON.stringify(finishedData)));
+                        });
                     }).catch((err) => {
                         reject(err);
                     });
