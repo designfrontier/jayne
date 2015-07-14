@@ -17,26 +17,26 @@ functions that are passed in are handled in the order in which they are added. T
 
 For example a response handler:
 ```
-function (previous, original) {
+function (previous, original, next) {
 	previous.timeOffset = new Date().getTime() - new Date(previous.body.timeStamp).getTime();
 
-	return previous;
+	next(previous);
 }
 ```
 
-Request handlers are also allowed and they recieve the request object in previous and original forms as well. If you wish to shortcircuit the request (preventing it from actually being sent) set `previous.response` to the value you want returned as the response body. This value can be overwritten by others and/or modified by them.
+Request handlers are also allowed and they recieve the request object in previous and original forms as well. If you wish to shortcircuit the request (preventing it from actually being sent) set `previous.response` to the value you want next(d as the response body. This value can be) overwritten by others and/or modified by them.
 
 ### getting functions in there
 ```
 jayne({
     response: [
-        function(previous, original) {
-            return previous;
+        function(previous, original, next) {
+            next(previous);
         }
     ]
     , request: [
-        function (previous, original) {
-            return previous;
+        function (previous, original, next) {
+            next(previous);
         }
     ]
 })
