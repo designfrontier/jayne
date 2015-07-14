@@ -36,13 +36,14 @@ let oldXHR = window.XMLHttpRequest
                 console.log(request);
 
                 requestStack(request).then((req) => {
-                    if(typeof req.response !== 'undefined'){
+                    if(req.response !== ''){
                         //a response has been set
 
                         //request = req; //needs to merge not overwrite
                         Object.keys(req).forEach((key) => {
                             request[key] = req[key];
                         });
+
                         request.status = 200;
                         request.responseText = JSON.stringify(request.response);
                         request.statusText = '200 OK';
@@ -50,7 +51,7 @@ let oldXHR = window.XMLHttpRequest
                         //send the real request out the door
                         //  this needs to be a whole new request object so I can grab the data before
                         //  anyone else does for the response stack
-
+                        request.oldSend();
                     }
 
                     responseStack(request).then((req) => {
