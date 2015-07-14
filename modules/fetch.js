@@ -1,4 +1,4 @@
-import * as functionStack from './stack';
+import * as bernstein from 'bernstein';
 
 let config
     , fetchAPI = window.fetch //the original fetch
@@ -6,8 +6,8 @@ let config
     , fetch = function (pathIn, options) {
         let promise = new Promise(function (resolve, reject){
             let fetchPromise
-                , requestStack = functionStack.create(config.request)
-                , responseStack = functionStack.create(config.response);
+                , requestStack = bernstein.create(config.request)
+                , responseStack = bernstein.create(config.response);
 
 
             requestStack({path: pathIn, options: options}).then((req) => {
