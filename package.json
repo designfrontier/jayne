@@ -1,6 +1,6 @@
 {
   "name": "jayne",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": " middleware/pipe function system for http(s) requests in the browser",
   "main": "app.js",
   "dependencies": {
