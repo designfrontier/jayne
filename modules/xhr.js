@@ -55,16 +55,6 @@ let oldXHR = window.XMLHttpRequest
                     });
                 });
 
-
-                //         request.addEventListener('load', function (data) {
-                //             if(typeof config.encrypt !== 'undefined' && config.encrypt){
-                //                 localforage.setItem(pathIn, crypto.encrypt(request.response));
-                //             } else {
-                //                 localforage.setItem(pathIn, request.response);
-                //             }
-                //         });
-
-                //         request.oldSend();
             };
 
 
