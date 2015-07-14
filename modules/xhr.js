@@ -2,15 +2,15 @@ import * as bernstein from 'bernstein';
 
 let oldXHR = window.XMLHttpRequest
     , config
-    , xhr = function () {
+    , xhr = () => {
             let tempReq = new oldXHR()
                 , request = {}
                 , rtn = {}
 
                 , pathIn = '/api'
 
-                , passThroughFunction = function (key) {
-                    return function () {
+                , passThroughFunction = (key) => {
+                    return () => {
                         tempReq[key].apply(tempReq, arguments);
                     };
                 }
@@ -27,13 +27,10 @@ let oldXHR = window.XMLHttpRequest
 
             request.oldSend = request.send;
 
-            request.send = function () {
-
+            request.send = () => {
                 //first run through the request stack
                 let requestStack = bernstein.create(config.request)
                     , responseStack = bernstein.create(config.response);
-
-                console.log(request);
 
                 requestStack(request).then((req) => {
                     if(req.response !== ''){
@@ -70,7 +67,7 @@ let oldXHR = window.XMLHttpRequest
             return request;
         }
 
-        , configurator = function (configObj) {
+        , configurator = (configObj) => {
             config = configObj;
             return xhr;
         };
